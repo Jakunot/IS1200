@@ -1,12 +1,11 @@
 /* mipslabwork.c
 
-   This file written 2015 by F Lundevall
-   Updated 2017-04-21 by F Lundevall
+  This file written 2015 by F Lundevall
+  Updated 2017-04-21 by F Lundevall
 
-   This file should be changed by YOU! So you must
-   add comment(s) here with your name(s) and date(s):
-
-   This file modified 2017-04-31 by Ture Teknolog 
+  
+  This file was modified 2017-04-31 by Ture Teknolog 
+  This file was modified 2022-02-16 by J Otieno
 
    For copyright and licensing, see file COPYING */
 
@@ -27,12 +26,34 @@ void user_isr( void )
 /* Lab-specific initialization goes here */
 void labinit( void )
 {
+  E = (volatile int*) 0xbf886100; //For TRISE for setting input or output
+  *E &= ~0xff;
+
+  E = (volatile int*) 0xbf886110; //For PORTE for reading and writing data
+  *E = 0;
+
+  TRISDSET = (0xff << 5);
+
   return;
 }
 
 /* This function is called repetitively from the main program */
 void labwork( void )
 {
+  
+  int btns = getbtns();
+  int sw = getsw();
+
+  if (btns & 1) {
+    mytime = (sw << 4) | (mytime & 0xff0f);
+  }
+  if (btns & 2) {
+    mytime = (sw << 8) | (mytime & 0xf0ff);
+  }
+  if (btns & 4) {
+    mytime = (sw << 12) | (mytime & 0x0fff);
+  }
+  
   delay( 1000 );
   time2string( textstring, mytime );
   display_string( 3, textstring );
