@@ -17,6 +17,7 @@
 
 int mytime = 0x5957;
 int timeoutcount = 0;
+int prime = 1234567;
 
 char textstring[] = "text, more text, and even more text!";
 
@@ -24,6 +25,24 @@ char textstring[] = "text, more text, and even more text!";
 
 void user_isr(void)
 {
+
+  if (IFS(0) & 0x100)
+  {
+    IFS(0) = 0; // Reset Flags
+    timeoutcount++;
+
+    if (timeoutcount == 10)
+    {
+
+      time2string(textstring, mytime);
+      display_string(3, textstring);
+      display_update();
+      tick(&mytime);
+      display_image(96, icon);
+
+      timeoutcount = 0;
+    }
+  }
   return;
 }
 
@@ -41,49 +60,17 @@ void labinit(void)
   TMR2 = 0;          // to reset the timer
   T2CONSET = 0x8000; // Sets the bit 15 "ON" to 1 in T2CON
 
+  IPCSET(2) = 0x100;
+  IECSET(0) = 0x100;
+  enable_interrupt();
+
   return;
 }
 
 /* This function is called repetitively from the main program */
 void labwork(void)
 {
-  volatile int *porte = (volatile int *)0xbf886110; // For PORTE for reading and writing data
-
-  int btns = getbtns();
-  int sw = getsw();
-
-  // button 2
-  if (btns & 1)
-  {
-    mytime = (sw << 4) | (mytime & 0xff0f);
-  }
-  // button 3
-  if (btns & 2)
-  {
-    mytime = (sw << 8) | (mytime & 0xf0ff);
-  }
-  // button 4
-  if (btns & 4)
-  {
-    mytime = (sw << 12) | (mytime & 0x0fff);
-  }
-
-  if (IFS(0) & 0x100)
-  {
-    IFS(0) = 0; // Reset Flags
-    timeoutcount++;
-
-    if (timeoutcount == 10)
-    {
-
-      time2string(textstring, mytime);
-      display_string(3, textstring);
-      display_update();
-      tick(&mytime);
-      display_image(96, icon);
-      *porte += 0x1;
-
-      timeoutcount = 0;
-    }
-  }
+  prime = nextprime(prime);
+  display_string(0, itoaconv(prime));
+  display_update();
 }

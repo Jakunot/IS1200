@@ -26,13 +26,10 @@ void user_isr( void )
 /* Lab-specific initialization goes here */
 void labinit( void )
 {
-  E = (volatile int*) 0xbf886100; //For TRISE for setting input or output
-  *E &= ~0xff;
+  volatile int* trise = (volatile int*) 0xbf886100; //For TRISE for setting input or output
+  *trise &= ~0xff;  //set first 8 bits to zero, setting them as output pins
 
-  E = (volatile int*) 0xbf886110; //For PORTE for reading and writing data
-  *E = 0;
-
-  TRISDSET = (0xff << 5);
+  TRISD = TRISD & 0x0fe0; //initializing PORTD, set bits 11-5 as input
 
   return;
 }
@@ -40,24 +37,30 @@ void labinit( void )
 /* This function is called repetitively from the main program */
 void labwork( void )
 {
+  volatile int* porte = (volatile int*) 0xbf886110; //For PORTE for reading and writing data
+  
   
   int btns = getbtns();
   int sw = getsw();
 
+  //button 2
   if (btns & 1) {
     mytime = (sw << 4) | (mytime & 0xff0f);
   }
+  //button 3
   if (btns & 2) {
     mytime = (sw << 8) | (mytime & 0xf0ff);
   }
+  //button 4
   if (btns & 4) {
     mytime = (sw << 12) | (mytime & 0x0fff);
   }
-  
+
   delay( 1000 );
   time2string( textstring, mytime );
   display_string( 3, textstring );
   display_update();
   tick( &mytime );
   display_image(96, icon);
+  *porte += 0x1;
 }
