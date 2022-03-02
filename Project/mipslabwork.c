@@ -13,11 +13,21 @@
 #include <pic32mx.h>  /* Declarations of system-specific addresses etc */
 #include "mipslab.h"  /* Declatations for these labs */
 
+int timeoutcount = 0;
 
 
 /* Interrupt Service Routine */
 void user_isr( void )
 {
+  if (IFS(0) & 0x100)
+  {
+    timeoutcount++;
+    IFSCLR(0) = 0x100;
+    if (timeoutcount == 10)
+    { // timeoutcount wraps at 10
+      timeoutcount = 0;
+    }
+  }
   return;
 }
 

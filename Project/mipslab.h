@@ -57,5 +57,58 @@ int getbtns(void);
 int getsw(void);
 void enable_interrupt(void);
 
-/* Written as part of project: main menu*/
+/* Written as part of project: main-menu functions*/
 void menu(int);
+void mainMenuFunctions(void);
+/* Written as part of project: main-menu variables*/
+extern float currentMenu;
+extern float settingsMenu;
+
+/* Written as part of project: display functions*/
+void setPixelArray(int, int, int, int);
+void translateToImage(void);
+void clearDisplay(void);
+void clearString(void);
+
+/*Written as part of project: display variables*/
+
+extern uint8_t display[32][128];
+extern uint8_t oled_display[512];
+
+
+/* Written as part of project: game mechanics variables*/
+//paddle movements 
+extern float paddle_height;
+extern float paddle_width;
+extern float paddle_speed;
+
+extern float paddle1_xPos;
+extern float paddle1_yPos;
+extern int player1Points;
+
+extern float paddle2_xPos;
+extern float paddle2_yPos;
+extern int player2Points;
+
+//ball movements
+extern float ball_size;
+extern float ball_speedX;
+extern float ball_speedY;
+extern float ball_xPos;
+extern float ball_yPos;
+extern float max_ball_speedX;
+
+//CPU-movements
+extern float ai_paddle_speed;
+extern float randomNumber;
+/* Written as part of project: game mechanics functions*/
+void player1_movement(void);
+void player2_movement(void);
+void collide(void);
+void updateGame(void);
+void goal(void);
+void resetGame();
+void difficulty();
+void getRandom();
+int getRandomSign();
+
