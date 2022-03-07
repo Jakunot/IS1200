@@ -1,9 +1,13 @@
 /* mipslab.h
+   
    Header file for all labs.
+
    This file written 2015 by F Lundevall
    Some parts are original code written by Axel Isaksson
 
    Latest update 2015-08-28 by F Lundevall
+   Latest update 2022-03-03 by E Beshir & J Otineo
+
 
    For copyright and licensing, see file COPYING */
 
@@ -36,79 +40,137 @@ void tick( unsigned int * timep );
 void display_debug( volatile int * const addr );
 
 /* Declare bitmap array containing font */
-extern const uint8_t const font[128*8];
+const uint8_t const font[128*8];
 /* Declare bitmap array containing icon */
-extern const uint8_t const icon[128];
+const uint8_t const icon[128];
 /* Declare text buffer for display output */
-extern char textbuffer[4][16];
+char textbuffer[4][16];
 
 /* Declare functions written by students.
    Note: Since we declare these functions here,
    students must define their functions with the exact types
    specified in the laboratory instructions. */
-
 /* Written as part of asm lab: delay, time2string */
-
 void delay(int);
 void time2string( char *, int );
-
 /* Written as part of i/o lab: getbtns, getsw, enable_interrupt */
 int getbtns(void);
 int getsw(void);
 void enable_interrupt(void);
 
-/* Written as part of project: main-menu functions*/
-void menu(int);
-void mainMenuFunctions(void);
-/* Written as part of project: main-menu variables*/
-extern float currentMenu;
-extern float settingsMenu;
+// display = a matrix for the pixel dimensions is 32 pixels in height (y) and 128 pixels in width (x)
+uint8_t display[32][128];
+// oled_display = a matrix that can be interpreted by the hardware
+uint8_t oled_display[512];
 
-/* Written as part of project: display functions*/
-void setPixelArray(int, int, int, int);
-void translateToImage(void);
-void clearDisplay(void);
-void clearString(void);
+// Variables to keep track of navigation between different screens
+extern int in_menu;
+extern int in_game;
+extern int in_mode_menu;
+extern int in_scoreboard;
+extern int menu_option;
+extern int modes_option;
 
-/*Written as part of project: display variables*/
+// Modes
+extern int default_mode;
+extern int ai_mode;
+extern int infinity_mode;
 
-extern uint8_t display[32][128];
-extern uint8_t oled_display[512];
+// AI difficulty variables
+extern float aiPadelSpeed5;
 
+// Variables that are needed for (quicksleeps/delays) in the start and end of every screen
+extern int start_of_menu;
+extern int start_of_modes;
+extern int start_of_scoreboard;
+extern int start_of_game;
+extern int end_of_game;
 
-/* Written as part of project: game mechanics variables*/
-//paddle movements 
-extern float paddle_height;
-extern float paddle_width;
-extern float paddle_speed;
+// Highscore specific variables
+extern int infinity_score;
+extern int current_scoreboard_list[];
 
-extern float paddle1_xPos;
-extern float paddle1_yPos;
-extern int player1Points;
+// Highscore int to char array
+extern char scoreboard_pos1[];
+extern char scoreboard_pos2[];
+extern char scoreboard_pos3[];
+extern char buffer1[];
+extern char buffer2[];
+extern char buffer3[];
 
-extern float paddle2_xPos;
-extern float paddle2_yPos;
-extern int player2Points;
+extern float ai_pad_speed;
 
-//ball movements
+extern char concat_score[];
+extern char space_the_score[];
+
+// Padel and player variables
+extern float pad_height;
+extern float pad_width;
+extern float pad_speed ;
+extern int leds;
+
+extern float pad1_pos_X;
+extern float pad1_pos_Y;
+extern int player1_score;
+
+extern float pad2_pos_X;
+extern float pad2_pos_Y;
+extern int player2_score;
+
+// Ball variables
 extern float ball_size;
-extern float ball_speedX;
-extern float ball_speedY;
-extern float ball_xPos;
-extern float ball_yPos;
-extern float max_ball_speedX;
+extern float ball_speed_X;
+extern float ball_speed_Y;
+extern float ball_pos_X;
+extern float ball_pos_Y;
+extern float max_ball_speed_X;
 
-//CPU-movements
-extern float ai_paddle_speed;
-extern float randomNumber;
-/* Written as part of project: game mechanics functions*/
-void player1_movement(void);
-void player2_movement(void);
-void collide(void);
-void updateGame(void);
+extern float random_number;
+
+extern int timeoutcount;
+extern int tickCounter;
+
+/* Function */ 
+
+/* Display */
+void set_pixel(int, int, int, int);
+void clear_string_display(void);
+void convert_to_display(void);
+void clear_array_display(void);
+
+
+/* Game Mechanics */
+void ball_mechanics(void);
+void player_movement(void);
+
+/* Game State */
+void clear_array_display(void);
+void reset_game(void);
 void goal(void);
-void resetGame();
-void difficulty();
-void getRandom();
-int getRandomSign();
+void game_end(void);
+
+void show_menu(void);
+void show_modes_menu(void);
+void show_scoreboard(void);
+
+void set_in_game(void);
+void set_ai_difficulty(void);
+void set_infinity_mode(void);
+void set_ai_mode(void);
+
+/* Menu */ 
+void move_menu_cursor(void);
+void set_menu(void);
+void scoreboard(void);
+void move_modes_cursor(void);
+void set_mode(void);
+void quit_game(void);
+
+/* Game Lights */
+void ledControl(void);
+void lightshow(int); 
+
+
+
+
 

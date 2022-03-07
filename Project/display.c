@@ -1,14 +1,20 @@
-/* display.c
-   This file written 2015 by F Lundevall
-   Some parts are original code written by Axel Isaksson
+/* 
+  display.c
 
-   For copyright and licensing, see file COPYING */
+  This file written 2015 by F Lundevall
+  This file was edited 2022 by E Beshir & J otieno
+  Some parts are original code written by Axel Isaksson
+
+  For copyright and licensing, see file COPYING 
+  
+*/
 
 #include <stdint.h>  /* Declarations of uint_32 and the like */
 #include <pic32mx.h> /* Declarations of system-specific addresses etc */
 #include "mipslab.h" /* Declatations for these labs */
 
 /* Declare a helper function which is local to this file */
+
 static void num32asc(char *s, int);
 
 #define DISPLAY_CHANGE_TO_COMMAND_MODE (PORTFCLR = 0x10)
@@ -24,9 +30,11 @@ static void num32asc(char *s, int);
 #define DISPLAY_TURN_OFF_VBAT (PORTFSET = 0x20)
 
 /* quicksleep:
-   A simple function to create a small delay.
-   Very inefficient use of computing resources,
-   but very handy in some special cases. */
+    A simple function to create a small delay.
+    Very inefficient use of computing resources,
+    but very handy in some special cases. 
+*/
+
 void quicksleep(int cyc)
 {
   int i;
@@ -35,16 +43,19 @@ void quicksleep(int cyc)
 }
 
 /* tick:
-   Add 1 to time in memory, at location pointed to by parameter.
-   Time is stored as 4 pairs of 2 NBCD-digits.
-   1st pair (most significant byte) counts days.
-   2nd pair counts hours.
-   3rd pair counts minutes.
-   4th pair (least significant byte) counts seconds.
-   In most labs, only the 3rd and 4th pairs are used. */
+    Add 1 to time in memory, at location pointed to by parameter.
+    Time is stored as 4 pairs of 2 NBCD-digits.
+    1st pair (most significant byte) counts days.
+    2nd pair counts hours.
+    3rd pair counts minutes.
+    4th pair (least significant byte) counts seconds.
+    In most labs, only the 3rd and 4th pairs are used. 
+*/
+
 void tick(unsigned int *timep)
 {
   /* Get current value, store locally */
+  
   register unsigned int t = *timep;
   t += 1; /* Increment local copy */
 
@@ -90,6 +101,7 @@ void tick(unsigned int *timep)
   repeated calls to display_image; display_image overwrites
   about half of the digits shown by display_debug.
 */
+
 void display_debug(volatile int *const addr)
 {
   display_string(1, "Addr");
@@ -208,6 +220,7 @@ void display_update(void)
 
 /* Helper function, local to this file.
    Converts a number to hexadecimal ASCII digits. */
+
 static void num32asc(char *s, int n)
 {
   int i;
@@ -356,81 +369,84 @@ char *itoaconv(int num)
   // oled_display = a matrix that can be interpreted by the hardware
   uint8_t oled_display[512];
 
-  void setPixelArray(int xPos, int yPos, int length, int width)
+  /* This function receives component-positions to set slots of a 2D array to ones or zeros representing active or inactive pixels. */
+void set_pixel(int x_pos, int y_pos, int width, int height)
+{
+  int row, column;
+  for (row = 0; row < 32; row++)
   {
-    int row, column;
-    for (row = 0; row < 32; row++)
-    { // y-axis
-      for (column = 0; column < 128; column++)
-      { // x-axis
-        if (row >= yPos && row <= (yPos + width) && column >= xPos && column <= (xPos + length))
-        {
-          display[row][column] = 1;
-        }
-      }
-    }
-  }
-
-  void translateToImage()
-  {
-    int page, column, row, c, k;
-    uint8_t powerOfTwo = 1; // Interval: 2^0, 2^1 ... to ... 2^7.
-    uint8_t oledNumber = 0;
-    int survivalMode = 0;
-
-    for (page = 0; page < 4; page++)
+    for (column = 0; column < 128; column++)
     {
-      for (column = 0; column < 128; column++)
+      if (row >= y_pos && row <= (y_pos + height) && column >= x_pos && column <= (x_pos + width))
       {
-        powerOfTwo = 1;
-        oledNumber = 0;
-        for (row = 0; row < 8; row++)
-        {
-          if (display[8 * page + row][column])
-          {
-            oledNumber |= powerOfTwo;
-          }
-          powerOfTwo <<= 1;
-        }
-        // Display score in survival mode (Write 8-width letters, one for every time the column is a multiple of 8)
-        if (survivalMode && page == 0)
-        {
-          if (column % 8 == 0)
-          {
-            c = textbuffer[page][column / 8];
-          }
-          if (!(c & 0x80))
-          {
-            oledNumber |= font[c * 8 + column % 8]; // Set the hexadecimal number from font[] array and assign to the oledNumber variable.
-          }
-        }
-
-        oled_display[column + page * 128] = oledNumber;
+        display[row][column] = 1;
       }
     }
   }
+}
 
-  /* clears all elements in the array and sets them to 0 */
-  void clearDisplay()
+// Translate the 2D array into the 1D array with 512 slots.
+void convert_to_display()
+{
+  int page, column, row, c, k;
+
+  uint8_t powerOfTwo = 1; // Interval: 2^0, 2^1 ... to ... 2^7.
+  uint8_t oledNumber = 0;
+
+  for (page = 0; page < 4; page++)
   {
-    int row, column, i;
-    for (row = 0; row < 32; row++)
+    for (column = 0; column < 128; column++)
     {
-      for (column = 0; column < 128; column++)
+      powerOfTwo = 1;
+      oledNumber = 0;
+      for (row = 0; row < 8; row++)
       {
-        display[row][column] = 0; // Clear the array
+        if (display[8 * page + row][column])
+        {
+          oledNumber |= powerOfTwo;
+        }
+        powerOfTwo <<= 1;
       }
-    }
-    for (i = 0; i < 512; i++)
-    {
-      oled_display[i] = 0; // Clear the array
-    }
-  }
+      // Display score in survival mode (Write 8-width letters, one for every time the column is a multiple of 8)
+      if (infinity_mode && page == 0)
+      {
+        if (column % 8 == 0)
+        {
+          c = textbuffer[page][column / 8];
+        }
+        if (!(c & 0x80))
+        {
+          oledNumber |= font[c * 8 + column % 8]; // Set the hexadecimal number from font[] array and assign to the oledNumber variable.
+        }
+      }
 
-  void clearString()
-  {
-    display_string(0, "              ");
-    display_string(1, "              ");
-    display_string(2, "              ");
-    display_string(3, "              ");
+      oled_display[column + page * 128] = oledNumber;
+    }
   }
+}
+
+/* Clears all elements in arrays by setting them to 0 */
+void clear_array_display()
+{
+  int row, column, i;
+  for (row = 0; row < 32; row++)
+  {
+    for (column = 0; column < 128; column++)
+    {
+      display[row][column] = 0; // Clear the array
+    }
+  }
+  for (i = 0; i < 512; i++)
+  {
+    oled_display[i] = 0; // Clear the array
+  }
+}
+
+
+void clear_string_display()
+{
+  display_string(0, "              ");
+  display_string(1, "              ");
+  display_string(2, "              ");
+  display_string(3, "              ");
+}

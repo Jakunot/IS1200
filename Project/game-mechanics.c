@@ -1,229 +1,154 @@
+/* 
+    game-mechanics.c
+
+    This file was written 2022 by E Beshir & J otieno
+
+    For copyright and licensing, see file COPYING 
+
+*/
 #include <stdint.h>
 #include <pic32mx.h>
 #include "mipslab.h"
 #include <stdio.h>
 #include <stdlib.h>
 
-// paddle movements
-float paddle_height = 7;
-float paddle_width = 4;
-float paddle_speed = 1;
+// Paddle variables 
+float pad_height = 8;
+float pad_width = 4;
+float pad_speed = 1.5;
 
-float paddle1_xPos = 0;
-float paddle1_yPos = 32 / 2 - 5;
-int player1Points = 0;
+int leds = 0x0;
 
-float paddle2_xPos = 127 - 4;
-float paddle2_yPos = 32 / 2 - 5;
-int player2Points = 0;
+// player variables
+float pad1_pos_X = 0;       
+float pad1_pos_Y = 32 / 2 - 5;
 
-// ball movements
-float ball_size = 3;
-float ball_speedX = 1;
-float ball_speedY = 0;
-float ball_xPos = 128 / 2 - 2;
-float ball_yPos = 16;
-float max_ball_speedX = 4;
+float pad2_pos_X = 127 - 4;
+float pad2_pos_Y = 32 / 2 - 5;
 
-// CPU-movements
-float randomNumber = 0;
-float ai_paddle_speed = 0.75;
+// Ball variables
+float ball_size = 3;         
+float ball_speed_X = -1;
+float ball_speed_Y = 0;
+float ball_pos_X = 128 / 2 - 2;
+float ball_pos_Y = 16;
+float max_ball_speed_X = 3;
 
-void collide(void)
+
+/*
+    This functions enables movement of padels using the IO buttons (btn).
+    It increases and decreases vertical position of padels when corresponding 
+    btn is pressed
+ */
+void player_movement(void)
+{ 
+  /* Player 2 - increases vertical position of padel 2 when btn1 is pressed */
+    if (default_mode && (getbtns() & 0x1) && (pad2_pos_Y < (31 - pad_height)))
+    {
+        pad2_pos_Y += pad_speed;
+    }
+  // Player 2 - decrease vertical position of padel 2 when btn2 is pressed
+    else if (default_mode && (getbtns() & 0x2) && (pad2_pos_Y > 0))
+    {
+        pad2_pos_Y -= pad_speed;
+    }
+
+  /* Player 1 - increases vertical position of padel 1 when btn4 is pressed */
+    if ((getbtns() & 0x4) && (pad1_pos_Y < (31 - pad_height)))
+    {
+        pad1_pos_Y += pad_speed;
+    }
+  /* Player 1 - decrease vertical position of padel 2 when btn3 is pressed */
+    else if ((getbtns() & 0x8) && (pad1_pos_Y > 0))
+    {
+        pad1_pos_Y -= pad_speed;
+    }
+}
+
+
+void ball_mechanics(void)
 {
-    // paddle 1
-    if (ball_speedX < 0 && (ball_xPos >= paddle1_xPos) && (ball_xPos <= (paddle1_xPos + paddle_width)) && ((ball_yPos + ball_size) > paddle1_yPos) && (ball_yPos < (paddle1_yPos + paddle_height)))
+    /*--- PADEL RIGHT ---*/
+
+  // check if collision 
+    if (ball_speed_X < 0 && (ball_pos_X >= pad1_pos_X) && (ball_pos_X <= (pad1_pos_X + pad_width)) && ((ball_pos_Y + ball_size) > pad1_pos_Y) && (ball_pos_Y < (pad1_pos_Y + pad_height)))
     {
-        ball_speedX *= -1;
-        if (ball_speedX < max_ball_speedX)
+    // change direction 
+        ball_speed_X *= -1;
+    // increase speed if under speed limit
+        if (ball_speed_X < max_ball_speed_X)
         {
-            ball_speedX += 0.5;
+      // increase speed
+            ball_speed_X += 0.5;
         }
-        if ((ball_yPos + ball_size / 2) < paddle1_yPos + paddle_height / 2 && ball_speedY > -1.5)
+
+    // checks if ball comes from above and hits pad its trajectory should angle down
+        if ((ball_pos_Y + ball_size / 2) < pad1_pos_Y + pad_height / 2 && ball_speed_Y > -1.5)
         {
-            if (ball_speedX < -2)
+            if (ball_speed_X < -2)
             {
-                ball_speedY -= 0.55;
+                ball_speed_Y -= 0.55;
             }
             else
             {
-                ball_speedY -= 0.35;
+                ball_speed_Y -= 0.35;
             }
         }
-        else if ((ball_yPos + ball_size / 2) > paddle1_yPos + 2 * paddle_height / 2 && ball_speedY < 1.5)
+    // check if ball is approaching from below (ball is moving up) towards pad position 
+        else if ((ball_pos_Y + ball_size / 2) > pad1_pos_Y + 2 * pad_height / 2 && ball_speed_Y < 1.5)
         {
-            if (ball_speedX < -2)
+    
+            if (ball_speed_X < -2)
             {
-                ball_speedY += 0.55;
+                ball_speed_Y += 0.55;
             }
             else
             {
-                ball_speedY += 0.35;
+                ball_speed_Y += 0.35;
             }
         }
-        // Survival score increment
-        if (survivalMode)
+    // Survival score increment
+        if (infinity_mode)
         {
-            survivalScore++;
+            infinity_score++;
         }
     }
-    // paddle 2
-    else if (ball_speedX > 0 && ((ball_xPos + ball_size) >= paddle2_xPos) && ((ball_xPos + ball_size) <= paddle2_xPos + paddle_width) && (((ball_yPos + ball_size) > paddle2_yPos)) && (ball_yPos < (paddle2_yPos + paddle_height)))
+    /*--- PADEL LEFT ---*/
+    else if (ball_speed_X > 0 && ((ball_pos_X + ball_size) >= pad2_pos_X) && ((ball_pos_X + ball_size) <= pad2_pos_X + pad_width) && (((ball_pos_Y + ball_size) > pad2_pos_Y)) && (ball_pos_Y < (pad2_pos_Y + pad_height)))
     {
-        ball_speedX *= -1;
-        if (ball_speedX > -max_ball_speedX)
+        ball_speed_X *= -1;
+        if (ball_speed_X > -max_ball_speed_X)
         {
-            ball_speedX -= 0.5;
+            ball_speed_X -= 0.5;
         }
-        if ((ball_yPos + ball_size / 2) < paddle2_yPos + paddle_height / 2 && ball_speedY > -1.5)
+        if ((ball_pos_Y + ball_size / 2) < pad2_pos_Y + pad_height / 2 && ball_speed_Y > -1.5)
         {
-            if (ball_speedX > 2)
+            if (ball_speed_X > 2)
             {
-                ball_speedY -= 0.55;
+                ball_speed_Y -= 0.55;
             }
             else
             {
-                ball_speedY -= 0.35;
+                ball_speed_Y -= 0.35;
             }
         }
-        else if ((ball_yPos + ball_size / 2) > paddle2_yPos + 2 * paddle_height / 2 && ball_speedY < 1.5)
+        else if ((ball_pos_Y + ball_size / 2) > pad2_pos_Y + 2 * pad_height / 2 && ball_speed_Y < 1.5)
         {
-            if (ball_speedX > 2)
+            if (ball_speed_X > 2)
             {
-                ball_speedY += 0.55;
+                ball_speed_Y += 0.55;
             }
             else
             {
-                ball_speedY += 0.35;
+                ball_speed_Y += 0.35;
             }
         }
     }
 
-    if ((ball_xPos + ball_size) < 0 || ball_xPos > 128)
+    if ((ball_pos_X + ball_size) < 0 || ball_pos_X > 128)
     {
         quicksleep(1 << 16);
         goal();
     }
 }
 
-// enable paddle movement
-void player1_movement(void)
-{
-    if (defaultMode && (getbtns() & 0x1) && (paddle2_yPos < (31 - paddle_height)))
-    {
-        paddle2_yPos += paddle_speed;
-    }
-    else if (defaultMode && (getbtns() & 0x2) && (paddle2_yPos > 0))
-    {
-        paddle2_yPos -= paddle_speed;
-    }
-}
-
-
-void player2_movement(void)
-{
-    if ((getbtns() & 0x4) && (paddle1_yPos < (31 - paddle_height)))
-    {
-        paddle1_yPos += paddle_speed;
-    }
-    else if ((getbtns() & 0x8) && (paddle1_yPos > 0))
-    {
-        paddle1_yPos -= paddle_speed;
-    }
-}
-
-void updateGame(void)
-{
-    ball_xPos += ball_speedX;
-    ball_yPos += ball_speedY;
-    if (ball_yPos < 0 || ball_yPos > (31 - ball_size))
-    {
-        ball_speedY *= -1;
-    }
-}
-
-void goal()
-{
-
-    if (ball_xPos < 0)
-    {
-        leds = ((leds << 1) | 0x1);
-        player2Points++;
-    }
-    else if (ball_xPos > (128 - ball_size))
-    {
-        leds >>= 1;
-        player2Points++;
-    }
-    resetGame();
-    if (leds == 0x0 || leds == 0xff)
-    {
-        endGame();
-    }
-}
-
-/* Seting all variables back to default */
-void resetGame()
-{
-    paddle1_xPos = 0;
-    paddle1_yPos = 32 / 2 - paddle_height / 2;
-
-    paddle2_xPos = 127 - paddle_width;
-    paddle2_yPos = 32 / 2 - paddle_height / 2;
-
-    ball_xPos = 128 / 2 - ball_size / 2;
-    ball_yPos = 16;
-
-    clearDisplay();
-    setPixelArray(paddle1_xPos, paddle1_yPos, paddle_width, paddle_height);
-    setPixelArray(paddle2_xPos, paddle2_yPos, paddle_width, paddle_height);
-    setPixelArray(ball_xPos, ball_yPos, ball_size, ball_size);
-    translateToImage();
-    display_image(0, oled_display);
-
-    startOfGame = 1;
-}
-
-/* setting switches for different CPU-difficulty */
-
-void difficulty()
-{
-    if (aiMode)
-    {
-        if (getsw() & 0x1)
-        {
-            ai_paddle_speed = 0.9;
-        }
-        else if (getsw() & 0x2)
-        {
-            ai_paddle_speed = 1.05;
-            max_ball_speedX = 4.5;
-        }
-        else if (getsw() & 0x4)
-        {
-            ai_paddle_speed = 1.20;
-            max_ball_speedX = 5;
-        }
-        else
-        {
-            ai_paddle_speed = 0.75;
-        }
-    }
-}
-
-void getRandom()
-{
-    randomNumber = TMR2 % 5;
-    randomNumber /= 10;
-    randomNumber += 0.5;
-    randomNumber *= getRandomSign();
-}
-
-int getRandomSign()
-{
-    if (TMR2 % 10 < 5)
-    {
-        return -1;
-    }
-    return 1;
-}
