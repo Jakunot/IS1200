@@ -1,5 +1,5 @@
 /* 
-    game-mechanics.c
+    leds.c
 
     This file was written 2022 by E Beshir & J otieno
 
